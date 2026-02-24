@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exploração Lunar: Apollo & Artemis</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --space-dark: #020818;
+      --space-mid: #0a1628;
+      --space-blue: #0d2137;
+      --accent-gold: #f5c518;
+      --accent-blue: #4fc3f7;
+      --accent-artemis: #7c4dff;
+      --accent-apollo: #ff8f00;
+      --text-primary: #e8eaf6;
+      --text-secondary: #90a4ae;
+      --card-bg: rgba(255,255,255,0.04);
+      --card-border: rgba(255,255,255,0.08);
+      --radius: 12px;
+      --transition: 0.3s ease;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--space-dark);
+      color: var(--text-primary);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* ===== STARS BACKGROUND ===== */
+    #stars-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ===== NAVIGATION ===== */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(2, 8, 24, 0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 0 2rem;
+    }
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+    .nav-logo {
+      font-size: 1.2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent-gold), var(--accent-blue));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: 0.05em;
+    }
+    .nav-links {
+      display: flex;
+      gap: 0.25rem;
+      list-style: none;
+    }
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.875rem;
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      transition: var(--transition);
+    }
+    .nav-links a:hover {
+      color: var(--text-primary);
+      background: var(--card-bg);
+    }
+
+    /* ===== HERO ===== */
+    .hero {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 6rem 2rem 4rem;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 60%, rgba(79,195,247,0.12) 0%, transparent 70%),
+                  radial-gradient(ellipse at 80% 20%, rgba(124,77,255,0.08) 0%, transparent 50%);
+    }
+    .hero-moon {
+      position: absolute;
+      bottom: -80px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #d4d4d4, #888, #444, #222);
+      box-shadow: 0 0 120px rgba(200,200,200,0.15), inset -40px -40px 80px rgba(0,0,0,0.6);
+      opacity: 0.35;
+    }
+    .hero-content { position: relative; z-index: 2; max-width: 800px; }
+    .hero-badge {
+      display: inline-block;
+      padding: 0.3rem 1rem;
+      border: 1px solid var(--accent-blue);
+      border-radius: 20px;
+      font-size: 0.75rem;
+      color: var(--accent-blue);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+    }
+    .hero h1 {
+      font-size: clamp(2.5rem, 6vw, 5rem);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #fff 0%, var(--accent-blue) 50%, var(--accent-artemis) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero-subtitle {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto 2.5rem;
+    }
+    .hero-cta {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 0.75rem 1.75rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: var(--transition);
+      cursor: pointer;
+      border: none;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-apollo), #ffb300);
+      color: #000;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(245,197,24,0.35); }
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--accent-artemis);
+      color: var(--accent-artemis);
+    }
+    .btn-secondary:hover { background: rgba(124,77,255,0.15); transform: translateY(-2px); }
+
+    /* ===== SECTIONS ===== */
+    section {
+      position: relative;
+      z-index: 1;
+      padding: 5rem 2rem;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .section-header { text-align: center; margin-bottom: 3.5rem; }
+    .section-tag {
+      display: inline-block;
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent-blue);
+      margin-bottom: 0.75rem;
+    }
+    .section-title {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .section-desc {
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto;
+      font-size: 1.05rem;
+    }
+    .divider {
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent-apollo), var(--accent-artemis));
+      margin: 1.5rem auto 0;
+      border-radius: 2px;
+    }
+
+    /* ===== STATS STRIP ===== */
+    .stats-strip {
+      background: var(--card-bg);
+      border-top: 1px solid var(--card-border);
+      border-bottom: 1px solid var(--card-border);
+      padding: 2.5rem 2rem;
+    }
+    .stats-grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 2rem;
+      text-align: center;
+    }
+    .stat-item {}
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent-gold), var(--accent-blue));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-top: 0.25rem;
+    }
+
+    /* ===== CARDS ===== */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: var(--transition);
+    }
+    .card:hover {
+      border-color: rgba(255,255,255,0.16);
+      transform: translateY(-4px);
+      box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+    }
+    .card-img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      display: block;
+    }
+    .card-body { padding: 1.5rem; }
+    .card-tag {
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      margin-bottom: 0.75rem;
+      display: inline-block;
+    }
+    .tag-apollo { background: rgba(255,143,0,0.2); color: var(--accent-apollo); }
+    .tag-artemis { background: rgba(124,77,255,0.2); color: var(--accent-artemis); }
+    .tag-future { background: rgba(79,195,247,0.2); color: var(--accent-blue); }
+    .card-title { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .card-text { font-size: 0.9rem; color: var(--text-secondary); }
+
+    /* ===== TIMELINE ===== */
+    .timeline { position: relative; padding: 2rem 0; }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 0; bottom: 0;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--accent-apollo), var(--accent-artemis));
+      transform: translateX(-50%);
+    }
+    .timeline-item {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 3rem;
+      position: relative;
+    }
+    .timeline-item:nth-child(odd) { flex-direction: row-reverse; }
+    .timeline-item:nth-child(odd) .timeline-content { margin-right: 3rem; margin-left: 0; text-align: right; }
+    .timeline-item:nth-child(even) .timeline-content { margin-left: 3rem; }
+    .timeline-dot {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 3px solid var(--space-dark);
+      z-index: 2;
+      top: 6px;
+    }
+    .dot-apollo { background: var(--accent-apollo); box-shadow: 0 0 12px var(--accent-apollo); }
+    .dot-artemis { background: var(--accent-artemis); box-shadow: 0 0 12px var(--accent-artemis); }
+    .dot-future { background: var(--accent-blue); box-shadow: 0 0 12px var(--accent-blue); }
+    .timeline-content {
+      width: calc(50% - 2rem);
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      transition: var(--transition);
+    }
+    .timeline-content:hover { border-color: rgba(255,255,255,0.16); }
+    .timeline-year {
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent-gold);
+      margin-bottom: 0.25rem;
+    }
+    .timeline-title { font-size: 1rem; font-weight: 700; margin-bottom: 0.4rem; }
+    .timeline-text { font-size: 0.875rem; color: var(--text-secondary); }
+
+    /* ===== COMPARISON TABLE ===== */
+    .comparison-section { background: var(--space-mid); }
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 0;
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .comp-header {
+      padding: 1.25rem 1.5rem;
+      font-weight: 700;
+      text-align: center;
+      font-size: 0.9rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .comp-header.label { background: rgba(255,255,255,0.03); }
+    .comp-header.apollo { background: rgba(255,143,0,0.12); color: var(--accent-apollo); }
+    .comp-header.artemis { background: rgba(124,77,255,0.12); color: var(--accent-artemis); }
+    .comp-row {
+      display: contents;
+    }
+    .comp-cell {
+      padding: 1rem 1.5rem;
+      font-size: 0.9rem;
+      border-top: 1px solid var(--card-border);
+      vertical-align: middle;
+    }
+    .comp-cell.label { color: var(--text-secondary); font-weight: 600; font-size: 0.85rem; }
+    .comp-cell.apollo { background: rgba(255,143,0,0.04); }
+    .comp-cell.artemis { background: rgba(124,77,255,0.04); }
+    .comp-row:hover .comp-cell { background: rgba(255,255,255,0.03); }
+
+    /* ===== MISSIONS GRID ===== */
+    .missions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    /* ===== PHOTO GALLERY ===== */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1rem;
+    }
+    .gallery-item {
+      position: relative;
+      border-radius: var(--radius);
+      overflow: hidden;
+      cursor: pointer;
+      aspect-ratio: 4/3;
+    }
+    .gallery-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+    .gallery-item:hover img { transform: scale(1.06); }
+    .gallery-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 60%);
+      opacity: 0;
+      transition: var(--transition);
+      display: flex;
+      align-items: flex-end;
+      padding: 1rem;
+    }
+    .gallery-item:hover .gallery-overlay { opacity: 1; }
+    .gallery-caption { font-size: 0.85rem; font-weight: 600; }
+
+    /* ===== CHARTS ===== */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      gap: 2rem;
+    }
+    .chart-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+    }
+    .chart-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: var(--text-primary);
+    }
+    .chart-container { position: relative; height: 280px; }
+
+    /* ===== FUTURE SECTION ===== */
+    .future-section {
+      background: linear-gradient(135deg, rgba(124,77,255,0.08) 0%, rgba(79,195,247,0.05) 100%);
+      border-top: 1px solid rgba(124,77,255,0.2);
+      border-bottom: 1px solid rgba(79,195,247,0.2);
+    }
+    .future-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+    }
+    .future-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      transition: var(--transition);
+    }
+    .future-card:hover {
+      border-color: var(--accent-artemis);
+      transform: translateY(-4px);
+    }
+    .future-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+    .future-card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .future-card p { font-size: 0.875rem; color: var(--text-secondary); }
+
+    /* ===== CONSPIRACY SECTION ===== */
+    .conspiracy-section {
+      background: var(--space-dark);
+      padding: 5rem 2rem;
+      border-top: 1px solid var(--card-border);
+    }
+    .conspiracy-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      align-items: center;
+    }
+    @media (max-width: 768px) { .conspiracy-grid { grid-template-columns: 1fr; } }
+    .conspiracy-content h2 { font-size: 2rem; font-weight: 800; margin-bottom: 1.5rem; }
+    .conspiracy-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      transition: var(--transition);
+    }
+    .conspiracy-card:hover { border-color: var(--accent-gold); background: rgba(245,197,24,0.05); }
+    .conspiracy-q { font-weight: 700; color: var(--accent-gold); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+    .conspiracy-a { font-size: 0.9rem; color: var(--text-secondary); }
+
+    /* ===== TABS ===== */
+    .tabs { margin-bottom: 2rem; }
+    .tab-buttons {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+    .tab-btn {
+      padding: 0.5rem 1.25rem;
+      border-radius: 6px;
+      border: 1px solid var(--card-border);
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .tab-btn.active {
+      background: var(--card-bg);
+      color: var(--text-primary);
+      border-color: rgba(255,255,255,0.2);
+    }
+    .tab-btn:hover { color: var(--text-primary); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ===== LIGHTBOX ===== */
+    .lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.92);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .lightbox.open { display: flex; }
+    .lightbox img {
+      max-width: 90vw;
+      max-height: 85vh;
+      border-radius: var(--radius);
+      object-fit: contain;
+    }
+    .lightbox-close {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: #fff;
+      font-size: 1.5rem;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .lightbox-caption {
+      position: absolute;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      text-align: center;
+    }
+
+    /* ===== FOOTER ===== */
+    footer {
+      position: relative;
+      z-index: 1;
+      background: var(--space-mid);
+      border-top: 1px solid var(--card-border);
+      padding: 3rem 2rem;
+      text-align: center;
+    }
+    .footer-logo {
+      font-size: 1.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent-gold), var(--accent-blue));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.75rem;
+    }
+    footer p { color: var(--text-secondary); font-size: 0.875rem; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .timeline::before { left: 20px; }
+      .timeline-item, .timeline-item:nth-child(odd) { flex-direction: column; }
+      .timeline-item:nth-child(odd) .timeline-content,
+      .timeline-item:nth-child(even) .timeline-content {
+        margin-left: 3rem;
+        margin-right: 0;
+        width: calc(100% - 3rem);
+        text-align: left;
+      }
+      .timeline-dot { left: 20px; }
+      .comparison-grid { grid-template-columns: 1fr; }
+      .comp-header.label, .comp-cell.label { display: none; }
+      .nav-links { display: none; }
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ===== SCROLL ANIMATIONS ===== */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ===== PROGRESS BAR ===== */
+    .progress-bar-container {
+      background: rgba(255,255,255,0.08);
+      border-radius: 4px;
+      height: 8px;
+      margin: 0.5rem 0;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 1.5s ease;
+      width: 0;
+    }
+    .progress-apollo { background: linear-gradient(90deg, var(--accent-apollo), #ffb300); }
+    .progress-artemis { background: linear-gradient(90deg, var(--accent-artemis), var(--accent-blue)); }
+
+    /* ===== MISSION BADGE ===== */
+    .mission-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.2rem 0.7rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    .badge-success { background: rgba(76,175,80,0.2); color: #81c784; }
+    .badge-partial { background: rgba(255,152,0,0.2); color: #ffb74d; }
+    .badge-planned { background: rgba(79,195,247,0.2); color: var(--accent-blue); }
+    .badge-failed { background: rgba(244,67,54,0.2); color: #e57373; }
+
+    /* ===== QUOTE ===== */
+    .quote-block {
+      border-left: 4px solid var(--accent-gold);
+      padding: 1.25rem 1.75rem;
+      background: rgba(245,197,24,0.05);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      margin: 2rem 0;
+    }
+    .quote-text {
+      font-size: 1.15rem;
+      font-style: italic;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+    .quote-author { font-size: 0.85rem; color: var(--accent-gold); font-weight: 600; }
+
+    /* ===== INTRO SECTION ===== */
+    .intro-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3rem;
+      align-items: center;
+    }
+    @media (max-width: 768px) { .intro-grid { grid-template-columns: 1fr; } }
+    .intro-img {
+      border-radius: var(--radius);
+      width: 100%;
+      aspect-ratio: 4/3;
+      object-fit: cover;
+      border: 1px solid var(--card-border);
+    }
+    .intro-text h2 { font-size: 1.75rem; font-weight: 700; margin-bottom: 1rem; }
+    .intro-text p { color: var(--text-secondary); margin-bottom: 1rem; }
+
+    /* ===== PROGRAM CARDS ===== */
+    .program-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+    @media (max-width: 768px) { .program-split { grid-template-columns: 1fr; } }
+    .program-card {
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--card-border);
+    }
+    .program-header {
+      padding: 2rem;
+      position: relative;
+    }
+    .program-header.apollo-header {
+      background: linear-gradient(135deg, rgba(255,143,0,0.2), rgba(255,179,0,0.05));
+      border-bottom: 1px solid rgba(255,143,0,0.2);
+    }
+    .program-header.artemis-header {
+      background: linear-gradient(135deg, rgba(124,77,255,0.2), rgba(79,195,247,0.05));
+      border-bottom: 1px solid rgba(124,77,255,0.2);
+    }
+    .program-header h2 { font-size: 2rem; font-weight: 800; margin-bottom: 0.25rem; }
+    .program-header .years { font-size: 0.85rem; color: var(--text-secondary); }
+    .program-body { padding: 1.75rem; }
+    .program-body p { color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 1rem; }
+    .program-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+    .prog-stat {
+      background: rgba(255,255,255,0.04);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+    }
+    .prog-stat-num { font-size: 1.5rem; font-weight: 800; }
+    .prog-stat-label { font-size: 0.75rem; color: var(--text-secondary); }
+    .apollo-num { color: var(--accent-apollo); }
+    .artemis-num { color: var(--accent-artemis); }
+  </style>
+</head>
+<body>
+
+<!-- Stars Canvas -->
+<canvas id="stars-canvas"></canvas>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt="" />
+  <div class="lightbox-caption" id="lightbox-caption"></div>
+</div>
+
+<!-- Navigation -->
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo">🌙 Exploração Lunar</div>
+    <ul class="nav-links">
+      <li><a href="#intro">Início</a></li>
+      <li><a href="#apollo">Apollo</a></li>
+      <li><a href="#artemis">Artemis</a></li>
+      <li><a href="#comparacao">Comparação</a></li>
+      <li><a href="#timeline">Linha do Tempo</a></li>
+      <li><a href="#galeria">Galeria</a></li>
+      <li><a href="#hiato">O Hiato</a></li>
+      <li><a href="#futuro">Futuro</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="intro">
+  <div class="hero-moon"></div>
+  <div class="hero-content">
+    <div class="hero-badge">NASA · Exploração Lunar · 1961–Futuro</div>
+    <h1>Da Apollo à Artemis</h1>
+    <p class="hero-subtitle">
+      Mais de seis décadas de sonhos, conquistas e novas fronteiras na exploração da Lua — da corrida espacial da Guerra Fria ao retorno sustentável do século XXI.
+    </p>
+    <div class="hero-cta">
+      <a href="#apollo" class="btn btn-primary">Explorar Apollo</a>
+      <a href="#artemis" class="btn btn-secondary">Descobrir Artemis</a>
+    </div>
+  </div>
+</section>
+
+<!-- STATS STRIP -->
+<div class="stats-strip">
+  <div class="stats-grid">
+    <div class="stat-item">
+      <div class="stat-number" data-count="12">0</div>
+      <div class="stat-label">Astronautas na Lua</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number" data-count="6">0</div>
+      <div class="stat-label">Pousos Lunares Apollo</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number" data-count="382">0</div>
+      <div class="stat-label">kg de Amostras Lunares</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number" data-count="53">0</div>
+      <div class="stat-label">Anos desde o Último Pouso</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number" data-count="4">0</div>
+      <div class="stat-label">Tripulantes Artemis II</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-number" data-count="93">0</div>
+      <div class="stat-label">Bilhões USD Artemis (2025)</div>
+    </div>
+  </div>
+</div>
+
+<!-- INTRO -->
+<section id="intro-section">
+  <div class="container">
+    <div class="intro-grid fade-in">
+      <div>
+        <img src="images/earthrise_apollo8.jpg" alt="Earthrise - Apollo 8" class="intro-img" />
+      </div>
+      <div class="intro-text">
+        <div class="section-tag">A Grande Aventura Humana</div>
+        <h2>Por que a Lua?</h2>
+        <p>
+          A Lua representa muito mais do que um satélite natural. Ela é um laboratório científico, um arquivo geológico de 4,5 bilhões de anos e, agora, uma potencial plataforma para a expansão humana pelo sistema solar.
+        </p>
+        <p>
+          Desde que Neil Armstrong pisou no solo lunar em 20 de julho de 1969, a humanidade nunca mais foi a mesma. O Programa Apollo não apenas venceu a corrida espacial — ele transformou a ciência, a tecnologia e a percepção que temos do nosso lugar no universo.
+        </p>
+        <p>
+          Mais de cinco décadas depois, o Programa Artemis promete um retorno ainda mais ambicioso: não apenas visitar, mas estabelecer uma presença permanente, explorar o polo sul lunar e preparar o caminho para Marte.
+        </p>
+        <div class="quote-block">
+          <p class="quote-text">"Um pequeno passo para um homem, um salto gigantesco para a humanidade."</p>
+          <p class="quote-author">— Neil Armstrong, Apollo 11, 20 de julho de 1969</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- APOLLO SECTION -->
+<section id="apollo" style="background: var(--space-mid);">
+  <div class="container">
+    <div class="section-header fade-in">
+      <div class="section-tag" style="color: var(--accent-apollo);">1961 – 1972</div>
+      <h2 class="section-title">Programa Apollo</h2>
+      <p class="section-desc">A maior façanha tecnológica da história humana, nascida da rivalidade da Guerra Fria e da visão de um presidente.</p>
+      <div class="divider"></div>
+    </div>
+
+    <div class="program-split fade-in">
+      <div class="program-card">
+        <div class="program-header apollo-header">
+          <h2 style="color: var(--accent-apollo);">Apollo</h2>
+          <div class="years">1961 – 1972 · NASA · EUA</div>
+        </div>
+        <div class="program-body">
+          <p>
+            O Programa Apollo foi a resposta dos Estados Unidos ao desafio soviético na corrida espacial. Em 25 de maio de 1961, o presidente John F. Kennedy lançou o desafio histórico: enviar homens à Lua antes do fim da década.
+          </p>
+          <p>
+            Com um orçamento equivalente a US$ 165 bilhões em valores atuais, o programa mobilizou mais de 400.000 engenheiros, cientistas e técnicos. O resultado foi uma série de missões que culminaram no primeiro pouso lunar em 20 de julho de 1969.
+          </p>
+          <p>
+            Entre 1969 e 1972, seis missões Apollo pousaram na Lua, levando 12 astronautas à superfície lunar. A Apollo 13, em 1970, tornou-se famosa por seu dramático retorno após uma explosão a bordo.
+          </p>
+          <div class="program-stats">
+            <div class="prog-stat">
+              <div class="prog-stat-num apollo-num">17</div>
+              <div class="prog-stat-label">Missões Totais</div>
+            </div>
+            <div class="prog-stat">
+              <div class="prog-stat-num apollo-num">11</div>
+              <div class="prog-stat-label">Missões Tripuladas</div>
+            </div>
+            <div class="prog-stat">
+              <div class="prog-stat-num apollo-num">6</div>
+              <div class="prog-stat-label">Pousos na Lua</div>
+            </div>
+            <div class="prog-stat">
+              <div class="prog-stat-num apollo-num">12</div>
+              <div class="prog-stat-label">Astronautas Lunares</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <img src="images/apollo11_flag.jpg" alt="Buzz Aldrin na Lua - Apollo 11" style="width:100%; border-radius: var(--radius); aspect-ratio:4/3; object-fit:cover; border:1px solid var(--card-border); margin-bottom:1rem;" />
+        <img src="images/saturn_v_launch.jpg" alt="Lançamento do Saturno V" style="width:100%; border-radius: var(--radius); aspect-ratio:4/3; object-fit:cover; border:1px solid var(--card-border);" />
+      </div>
+    </div>
+
+    <!-- Apollo Missions Grid -->
+    <div style="margin-top: 3rem;">
+      <h3 style="font-size:1.3rem; font-weight:700; margin-bottom:1.5rem; text-align:center;">Missões Tripuladas Apollo</h3>
+      <div class="missions-grid fade-in">
+        <div class="card">
+          <div class="card-body">
+            <div class="mission-badge badge-failed">✕ Tragédia</div>
+            <div class="card-tag tag-apollo">Apollo 1 · Jan 1967</div>
+            <div class="card-title">O Incêndio Trágico</div>
+            <p class="card-text">Incêndio na cabine durante teste em solo matou os astronautas Gus Grissom, Ed White e Roger Chaffee. A tragédia levou a uma revisão completa de segurança do programa.</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <div class="mission-badge badge-success">✓ Sucesso</div>
+            <div class="card-tag tag-apollo">Apollo 7 · Out 1968</div>
+            <div class="card-title">Primeiro Voo Tripulado</div>
+            <p class="card-text">Walter Schirra, Donn Eisele e Walter Cunningham realizaram o primeiro voo tripulado do programa, testando o módulo de comando em órbita terrestre por 11 dias.</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <div class="mission-badge badge-success">✓ Histórica</div>
+            <div class="card-tag tag-apollo">Apollo 8 · Dez 1968</div>
+            <div class="card-title">Primeira Órbita Lunar</div>
+            <p class="card-text">Frank Borman, James Lovell e William Anders foram os primeiros humanos a orbitar a Lua. A icônica foto "Earthrise" foi tirada nesta missão na véspera do Natal de 1968.</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <div class="mission-badge badge-success">✓ Marco Histórico</div>
+            <div class="card-tag tag-apollo">Apollo 11 · Jul 1969</div>
+            <div class="card-title">O Primeiro Pouso Lunar</div>
+            <p class="card-text">Neil Armstrong e Buzz Aldrin pousaram no Mar da Tranquilidade em 20 de julho de 1969. Armstrong foi o primeiro humano a pisar na Lua. Michael Collins orbitou acima.</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <div class="mission-badge badge-partial">⚡ Abortada</div>
+            <div class="card-tag tag-apollo">Apollo 13 · Abr 1970</div>
+            <div class="card-title">"Houston, Temos um Problema"</div>
+            <p class="card-text">Uma explosão no tanque de oxigênio impediu o pouso lunar. James Lovell, Fred Haise e Jack Swigert retornaram à Terra em um feito de engenharia e coragem sem precedentes.</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <div class="mission-badge badge-success">✓ Último Pouso</div>
+            <div class="card-tag tag-apollo">Apollo 17 · Dez 1972</div>
+            <div class="card-title">O Adeus à Lua</div>
+            <p class="card-text">Eugene Cernan, Ronald Evans e Harrison Schmitt realizaram a última missão lunar. Cernan foi o último humano a pisar na Lua. A missão durou 12 dias e coletou 111 kg de amostras.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ARTEMIS SECTION -->
+<section id="artemis">
+  <div class="container">
+    <div class="section-header fade-in">
+      <div class="section-tag" style="color: var(--accent-artemis);">2017 – Presente</div>
+      <h2 class="section-title">Programa Artemis</h2>
+      <p class="section-desc">O retorno à Lua com novos objetivos: ciência, sustentabilidade, diversidade e o caminho para Marte.</p>
+      <div class="divider"></div>
+    </div>
+
+    <div class="program-split fade-in">
+      <div>
+        <img src="images/artemis_sls_pad.jpg" alt="Foguete SLS Artemis na plataforma" style="width:100%; border-radius: var(--radius); aspect-ratio:4/3; object-fit:cover; border:1px solid var(--card-border); margin-bottom:1rem;" />
+        <img src="images/artemis2_crew.jpg" alt="Tripulação Artemis II" style="width:100%; border-radius: var(--radius); aspect-ratio:4/3; object-fit:cover; border:1px solid var(--card-border);" />
+      </div>
+
+      <div class="program-card">
+        <div class="program-header artemis-header">
+          <h2 style="color: var(--accent-artemis);">Artemis</h2>
+          <div class="years">2017 – Presente · NASA + Parceiros Internacionais</div>
+        </div>
+        <div class="program-body">
+          <p>
+            Autorizado em 2017 pela Space Policy Directive 1, o Programa Artemis representa uma nova era da exploração lunar. Diferente do Apollo, é uma iniciativa global que envolve agências espaciais de 43 países signatários dos Acordos Artemis.
+          </p>
+          <p>
+            O programa tem objetivos muito mais amplos: não apenas pousar humanos na Lua, mas estabelecer uma presença sustentável, explorar o polo sul lunar (onde há gelo de água), construir a estação espacial Gateway em órbita lunar e preparar missões para Marte.
+          </p>
+          <p>
+            Em novembro de 2022, a Artemis I realizou um voo não tripulado bem-sucedido ao redor da Lua. A Artemis II, com quatro astronautas (incluindo a primeira mulher e o primeiro canadense em uma missão lunar), está prevista para 2026.
+          </p>
+          <div class="program-stats">
+            <div class="prog-stat">
+              <div class="prog-stat-num artemis-num">4+</div>
+              <div class="prog-stat-label">Missões Planejadas</div>
+            </div>
+            <div class="prog-stat">
+              <div class="prog-stat-num artemis-num">43</div>
+              <div class="prog-stat-label">Países Parceiros</div>
+            </div>
+            <div class="prog-stat">
+              <div class="prog-stat-num artemis-num">4</div>
+              <div class="prog-stat-label">Tripulantes Artemis II</div>
+            </div>
+            <div class="prog-stat">
+              <div class="prog-stat-num artemis-num">2027</div>
+              <div class="prog-stat-label">Pouso Previsto (Artemis III)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Artemis Missions -->
+    <div style="margin-top: 3rem;">
+      <h3 style="font-size:1.3rem; font-weight:700; margin-bottom:1.5rem; text-align:center;">Missões do Programa Artemis</h3>
+      <div class="missions-grid fade-in">
+        <div class="card">
+          <div class="card-body">
+            <div class="mission-badge badge-success">✓ Concluída</div>
+            <div class="card-tag tag-artemis">Artemis I · Nov 2022</div>
+            <div class="card-title">Voo de Teste Não Tripulado</div>
+            <p class="card-text">Primeiro voo do foguete SLS e da cápsula Orion ao redor da Lua sem tripulação. A missão durou 25 dias e testou todos os sistemas críticos com sucesso. Orion viajou 450.000 km da Terra.</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <div class="mission-badge badge-planned">→ Em Preparação</div>
+            <div class="card-tag tag-artemis">Artemis II · 2026</div>
+            <div class="card-title">Primeiro Voo Tripulado</div>
+            <p class="card-text">Quatro astronautas — Reid Wiseman, Victor Glover, Christina Koch e Jeremy Hansen — farão um sobrevoo da Lua em missão de 10 dias. Será o primeiro humano a orbitar a Lua em mais de 50 anos.</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <div class="mission-badge badge-planned">→ Planejada</div>
+            <div class="card-tag tag-artemis">Artemis III · 2027</div>
+            <div class="card-title">Retorno à Superfície Lunar</div>
+            <p class="card-text">Primeira missão a pousar no polo sul da Lua. Incluirá a primeira mulher e a primeira pessoa negra a pisar na Lua. Usará o módulo lunar Starship da SpaceX para o pouso.</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <div class="mission-badge badge-planned">→ Futura</div>
+            <div class="card-tag tag-artemis">Artemis IV · 2028+</div>
+            <div class="card-title">Construção do Gateway</div>
+            <p class="card-text">Primeira missão a atracar na estação espacial Gateway em órbita lunar. Iniciará a construção da infraestrutura permanente que servirá de base para futuras missões de longa duração.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON SECTION -->
+<section id="comparacao" class="comparison-section">
+  <div class="container">
+    <div class="section-header fade-in">
+      <div class="section-tag">Análise Comparativa</div>
+      <h2 class="section-title">Apollo vs. Artemis</h2>
+      <p class="section-desc">Dois programas, uma mesma Lua — mas com objetivos, tecnologias e contextos radicalmente diferentes.</p>
+      <div class="divider"></div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-grid fade-in" style="margin-bottom: 3rem;">
+      <div class="chart-card">
+        <div class="chart-title">Capacidade dos Foguetes (kN de Empuxo)</div>
+        <div class="chart-container">
+          <canvas id="rocketChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Custo dos Programas (Bilhões USD, valores 2021)</div>
+        <div class="chart-container">
+          <canvas id="costChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Capacidade da Nave (Volume Habitável em pés³)</div>
+        <div class="chart-container">
+          <canvas id="spaceChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Velocidade do Computador de Bordo (operações/seg)</div>
+        <div class="chart-container">
+          <canvas id="computerChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comparison Table -->
+    <div class="comparison-grid fade-in">
+      <div class="comp-header label">Característica</div>
+      <div class="comp-header apollo">🚀 Apollo</div>
+      <div class="comp-header artemis">🌙 Artemis</div>
+
+      <div class="comp-row">
+        <div class="comp-cell label">Período</div>
+        <div class="comp-cell apollo">1961 – 1972</div>
+        <div class="comp-cell artemis">2017 – Presente</div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell label">Foguete Principal</div>
+        <div class="comp-cell apollo">Saturno V (34.000 kN)</div>
+        <div class="comp-cell artemis">SLS Block 1 (39.144 kN)</div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell label">Computador de Bordo</div>
+        <div class="comp-cell apollo">AGC: ~0,043 MHz</div>
+        <div class="comp-cell artemis">Orion: ~480 MHz (x20.000)</div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell label">Destino Principal</div>
+        <div class="comp-cell apollo">Equador lunar</div>
+        <div class="comp-cell artemis">Polo Sul Lunar</div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell label">Motivação Principal</div>
+        <div class="comp-cell apollo">Corrida espacial / Guerra Fria</div>
+        <div class="comp-cell artemis">Ciência, sustentabilidade, Marte</div>
+      </div>
+      <div class="comp-row">
+        <div class="comp-cell label">Parceiros</div>
+        <div class="comp-cell apollo">Apenas EUA</div>
+        <div class="comp-cell artemis">43 países + setor privado</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HIATO SECTION (NEW) -->
+<section id="hiato" class="conspiracy-section">
+  <div class="container">
+    <div class="section-header fade-in">
+      <div class="section-tag" style="color: var(--accent-gold);">O Grande Hiato (1972-2024)</div>
+      <h2 class="section-title">Por que demoramos tanto para voltar?</h2>
+      <p class="section-desc">A pergunta que alimenta conspirações tem respostas baseadas na realidade política, econômica e tecnológica.</p>
+      <div class="divider" style="background: var(--accent-gold);"></div>
+    </div>
+
+    <div class="conspiracy-grid fade-in">
+      <div class="conspiracy-content">
+        <div class="conspiracy-card">
+          <div class="conspiracy-q">📉 Falta de Vontade Política</div>
+          <p class="conspiracy-a">Após vencer a URSS na corrida à Lua, o interesse político dos EUA diminuiu drasticamente. O orçamento da NASA, que chegou a 4,4% do orçamento federal em 1966, caiu para menos de 0,5% nas décadas seguintes.</p>
+        </div>
+        <div class="conspiracy-card">
+          <div class="conspiracy-q">🛰️ Mudança de Foco: Órbita Baixa</div>
+          <p class="conspiracy-a">Nas décadas de 70 a 2000, a NASA priorizou o Ônibus Espacial (Space Shuttle) e a Estação Espacial Internacional (ISS). O objetivo era aprender a viver e trabalhar no espaço, não viajar para outros mundos.</p>
+        </div>
+        <div class="conspiracy-card">
+          <div class="conspiracy-q">🏗️ Perda de Infraestrutura</div>
+          <p class="conspiracy-a">As fábricas que construíam o Saturno V foram fechadas, os engenheiros se aposentaram e as plantas originais tornaram-se obsoletas. Não era possível "apenas refazer" o Apollo; era necessário reinventar tudo com tecnologia moderna.</p>
+        </div>
+        <div class="conspiracy-card">
+          <div class="conspiracy-q">♻️ Ciclos Políticos Inconstantes</div>
+          <p class="conspiracy-a">Programas espaciais levam décadas, mas governos mudam a cada 4 ou 8 anos. Bush queria voltar à Lua (Constellation), Obama cancelou e focou em asteroides, Trump retomou o foco na Lua (Artemis) e Biden manteve.</p>
+        </div>
+      </div>
+
+      <div class="conspiracy-content">
+        <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; color: var(--accent-gold);">Respondendo às Conspirações</h3>
+        <div class="conspiracy-card">
+          <div class="conspiracy-q">❓ "Se fomos em 1969, por que não voltamos?"</div>
+          <p class="conspiracy-a">Ir à Lua era extremamente caro e perigoso. Uma vez atingido o objetivo político (vencer a Guerra Fria), o risco e o custo não se justificavam mais para a época. É como uma expedição ao Everest: você não fica lá para sempre só porque provou que consegue subir.</p>
+        </div>
+        <div class="conspiracy-card">
+          <div class="conspiracy-q">❓ "A bandeira tremula no vácuo?"</div>
+          <p class="conspiracy-a">Não. A bandeira tinha uma haste horizontal para mantê-la aberta. O "tremular" visto nos vídeos é a inércia do movimento após o astronauta soltá-la, que dura mais no vácuo lunar por não haver resistência do ar.</p>
+        </div>
+        <div class="conspiracy-card">
+          <div class="conspiracy-q">❓ "Cadê as estrelas nas fotos?"</div>
+          <p class="conspiracy-a">Física básica de fotografia: a superfície da Lua está sob sol forte e é muito reflexiva. Para fotografar os astronautas claros, o tempo de exposição da câmera deve ser curto, o que torna as estrelas (muito fracas) invisíveis na foto.</p>
+        </div>
+        <div class="conspiracy-card">
+          <div class="conspiracy-q">🔍 Evidência Irrefutável</div>
+          <p class="conspiracy-a">Astronautas da Apollo deixaram refletores laser na Lua. Até hoje, observatórios na Terra disparam lasers que batem nesses espelhos e voltam, permitindo medir a distância da Lua com precisão de milímetros.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TIMELINE SECTION -->
+<section id="timeline">
+  <div class="container">
+    <div class="section-header fade-in">
+      <div class="section-tag">Cronologia</div>
+      <h2 class="section-title">Linha do Tempo da Exploração Lunar</h2>
+      <p class="section-desc">De Sputnik ao retorno à Lua — os marcos que definiram a história espacial da humanidade.</p>
+      <div class="divider"></div>
+    </div>
+
+    <div class="timeline fade-in">
+      <div class="timeline-item">
+        <div class="timeline-dot dot-apollo"></div>
+        <div class="timeline-content">
+          <div class="timeline-year">1961</div>
+          <div class="timeline-title">Kennedy Lança o Desafio</div>
+          <p class="timeline-text">JFK desafia os EUA a enviar um homem à Lua antes do fim da década.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot dot-apollo"></div>
+        <div class="timeline-content">
+          <div class="timeline-year">1969</div>
+          <div class="timeline-title">Apollo 11 — O Homem na Lua</div>
+          <p class="timeline-text">Neil Armstrong e Buzz Aldrin dão o primeiro passo humano na Lua.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot dot-apollo" style="background: #666;"></div>
+        <div class="timeline-content" style="opacity: 0.7;">
+          <div class="timeline-year">1972-2022</div>
+          <div class="timeline-title">O Longo Hiato</div>
+          <p class="timeline-text">50 anos de exploração robótica e foco na órbita baixa da Terra (ISS).</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot dot-artemis"></div>
+        <div class="timeline-content">
+          <div class="timeline-year">2022</div>
+          <div class="timeline-title">Artemis I — O Retorno</div>
+          <p class="timeline-text">Voo não tripulado bem-sucedido ao redor da Lua.</p>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot dot-future"></div>
+        <div class="timeline-content">
+          <div class="timeline-year">2027+</div>
+          <div class="timeline-title">Artemis III e Além</div>
+          <p class="timeline-text">Retorno humano à superfície e construção da base permanente.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- GALLERY SECTION -->
+<section id="galeria" style="background: var(--space-mid);">
+  <div class="container">
+    <div class="section-header fade-in">
+      <div class="section-tag">Arquivo Visual</div>
+      <h2 class="section-title">Galeria de Imagens</h2>
+      <div class="divider"></div>
+    </div>
+
+    <div class="gallery-grid fade-in">
+      <div class="gallery-item" onclick="openLightbox('images/earthrise_apollo8.jpg', 'Earthrise — Apollo 8')">
+        <img src="images/earthrise_apollo8.jpg" alt="Earthrise" />
+        <div class="gallery-overlay"><span class="gallery-caption">Earthrise — Apollo 8</span></div>
+      </div>
+      <div class="gallery-item" onclick="openLightbox('images/apollo11_flag.jpg', 'Buzz Aldrin na Lua — Apollo 11')">
+        <img src="images/apollo11_flag.jpg" alt="Apollo 11" />
+        <div class="gallery-overlay"><span class="gallery-caption">Bandeira Lunar — Apollo 11</span></div>
+      </div>
+      <div class="gallery-item" onclick="openLightbox('images/artemis_sls_pad.jpg', 'SLS na plataforma — Artemis')">
+        <img src="images/artemis_sls_pad.jpg" alt="SLS" />
+        <div class="gallery-overlay"><span class="gallery-caption">SLS Artemis</span></div>
+      </div>
+      <div class="gallery-item" onclick="openLightbox('images/artemis2_crew.jpg', 'Tripulação Artemis II')">
+        <img src="images/artemis2_crew.jpg" alt="Tripulação" />
+        <div class="gallery-overlay"><span class="gallery-caption">Tripulação Artemis II</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FUTURE SECTION -->
+<section id="futuro" class="future-section">
+  <div class="container">
+    <div class="section-header fade-in">
+      <div class="section-tag" style="color: var(--accent-artemis);">Perspectivas</div>
+      <h2 class="section-title">O Futuro da Exploração Lunar</h2>
+      <div class="divider"></div>
+    </div>
+
+    <div class="future-grid fade-in">
+      <div class="future-card">
+        <div class="future-icon">🧊</div>
+        <h3>Água no Polo Sul</h3>
+        <p>Gelo nas crateras sombreadas para combustível e oxigênio.</p>
+      </div>
+      <div class="future-card">
+        <div class="future-icon">🏗️</div>
+        <h3>Gateway</h3>
+        <p>Estação espacial em órbita lunar como base de operações.</p>
+      </div>
+      <div class="future-card">
+        <div class="future-icon">🚀</div>
+        <h3>Marte</h3>
+        <p>A Lua como trampolim para a primeira missão humana ao Planeta Vermelho.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">🌙 Exploração Lunar</div>
+  <p>Apollo & Artemis — Da Guerra Fria ao Futuro Interplanetário</p>
+</footer>
+
+<!-- SCRIPTS -->
+<script>
+  // ===== STARS ANIMATION =====
+  const canvas = document.getElementById('stars-canvas');
+  const ctx = canvas.getContext('2d');
+  let stars = [];
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  function createStars() {
+    stars = [];
+    for (let i = 0; i < 200; i++) {
+      stars.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 1.5 + 0.3,
+        alpha: Math.random(),
+        speed: Math.random() * 0.003 + 0.001,
+        phase: Math.random() * Math.PI * 2
+      });
+    }
+  }
+
+  function animateStars() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const t = Date.now() * 0.001;
+    stars.forEach(s => {
+      const a = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(t * s.speed * 100 + s.phase));
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255,255,255,${a * 0.8})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(animateStars);
+  }
+
+  resizeCanvas();
+  createStars();
+  animateStars();
+  window.addEventListener('resize', () => { resizeCanvas(); createStars(); });
+
+  // ===== COUNTER ANIMATION =====
+  function animateCounter(el, target) {
+    let current = 0;
+    const step = target / 60;
+    const timer = setInterval(() => {
+      current += step;
+      if (current >= target) { current = target; clearInterval(timer); }
+      el.textContent = Math.floor(current);
+    }, 25);
+  }
+
+  const counterObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const el = entry.target;
+        const target = parseInt(el.dataset.count);
+        animateCounter(el, target);
+        counterObserver.unobserve(el);
+      }
+    });
+  }, { threshold: 0.5 });
+
+  document.querySelectorAll('[data-count]').forEach(el => counterObserver.observe(el));
+
+  // ===== FADE IN ANIMATION =====
+  const fadeObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        fadeObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.fade-in').forEach(el => fadeObserver.observe(el));
+
+  // ===== LIGHTBOX =====
+  function openLightbox(src, caption) {
+    document.getElementById('lightbox-img').src = src;
+    document.getElementById('lightbox-caption').textContent = caption;
+    document.getElementById('lightbox').classList.add('open');
+  }
+
+  function closeLightbox(e) {
+    if (!e || e.target === document.getElementById('lightbox') || e.target.classList.contains('lightbox-close')) {
+      document.getElementById('lightbox').classList.remove('open');
+    }
+  }
+
+  // ===== CHARTS =====
+  Chart.defaults.color = '#90a4ae';
+  Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+
+  new Chart(document.getElementById('rocketChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Saturno V (Apollo)', 'SLS (Artemis)'],
+      datasets: [{
+        label: 'Empuxo (kN)',
+        data: [34020, 39144],
+        backgroundColor: ['#ff8f00', '#7c4dff']
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false }
+  });
+
+  new Chart(document.getElementById('costChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Apollo (US$ 165 bi)', 'Artemis (US$ 93 bi)'],
+      datasets: [{
+        data: [165, 93],
+        backgroundColor: ['#ff8f00', '#7c4dff']
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false }
+  });
+
+  new Chart(document.getElementById('spaceChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Apollo CM', 'Orion'],
+      datasets: [{
+        label: 'Volume (pés³)',
+        data: [210, 316],
+        backgroundColor: ['#ff8f00', '#7c4dff']
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false }
+  });
+
+  new Chart(document.getElementById('computerChart'), {
+    type: 'bar',
+    data: {
+      labels: ['AGC Apollo', 'Orion'],
+      datasets: [{
+        label: 'Velocidade Relativa',
+        data: [1, 20000],
+        backgroundColor: ['#ff8f00', '#7c4dff']
+      }]
+    },
+    options: { 
+      responsive: true, 
+      maintainAspectRatio: false,
+      scales: { y: { type: 'logarithmic' } }
+    }
+  });
+</script>
+</body>
+</html>
